@@ -17,7 +17,7 @@ const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const simple_git_1 = __importDefault(require("simple-git"));
 // Load GitHub App credentials
 const APP_ID = 1178184;
-const PRIVATE_KEY = fs_1.default.readFileSync("./aether-server.2025-03-14.private-key.pem", "utf8");
+const PRIVATE_KEY = fs_1.default.readFileSync("./github_key.pem", "utf8");
 // Step 1: Generate a JWT
 function generateJwt() {
     const now = Math.floor(Date.now() / 1000);
