@@ -4,7 +4,7 @@ import simpleGit from "simple-git";
 
 // Load GitHub App credentials
 const APP_ID = 1178184;
-const PRIVATE_KEY = fs.readFileSync("./aether-server.2025-03-14.private-key.pem", "utf8");
+const PRIVATE_KEY = fs.readFileSync("./github_key.pem", "utf8");
 
 // Step 1: Generate a JWT
 function generateJwt() {
