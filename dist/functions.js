@@ -68,12 +68,21 @@ function cloneRepo(repoUrl, token, destination, repo) {
         const targetDir = path_1.default.join(process.cwd(), `clonedRepos`, destination);
         const git = (0, simple_git_1.default)();
         const authUrl = repoUrl.replace("https://", `https://x-access-token:${token}@`);
-        if (!fs_1.default.existsSync(targetDir)) {
-            fs_1.default.mkdirSync(targetDir, { recursive: true });
+        try {
+            if (!fs_1.default.existsSync(targetDir)) {
+                fs_1.default.mkdirSync(targetDir, { recursive: true });
+            }
+            else if (fs_1.default.existsSync(targetDir)) {
+                return { success: false };
+            }
+        }
+        catch (error) {
+            return { success: false };
         }
         console.log("Cloning:", repoUrl);
         yield git.clone(authUrl, targetDir);
         console.log("✅ Cloned successfully!");
+        return { success: true };
     });
 }
 const cloneGithubRepo = ({ githubName, repo, destination }) => __awaiter(void 0, void 0, void 0, function* () {
@@ -84,11 +93,12 @@ const cloneGithubRepo = ({ githubName, repo, destination }) => __awaiter(void 0,
         const accessToken = yield getInstallationToken(jwtToken, installationId);
         console.log("->", accessToken);
         const repoUrl = `https://github.com/${githubName}/${repo}`;
-        yield cloneRepo(repoUrl, accessToken, destination, repo);
+        const { success } = yield cloneRepo(repoUrl, accessToken, destination, repo);
+        return { success };
     }
     catch (error) {
         //@ts-ignore
-        console.error("❌ Error:", error);
+        return { success: false };
     }
 });
 exports.cloneGithubRepo = cloneGithubRepo;

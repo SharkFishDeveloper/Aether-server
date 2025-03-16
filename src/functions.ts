@@ -62,12 +62,19 @@ async function cloneRepo(repoUrl:string, token:string,destination:string,repo:st
     const git = simpleGit();
     const authUrl = repoUrl.replace("https://", `https://x-access-token:${token}@`);
 
-    if (!fs.existsSync(targetDir)) {
-        fs.mkdirSync(targetDir, { recursive: true });
+    try {
+        if (!fs.existsSync(targetDir)) {
+            fs.mkdirSync(targetDir, { recursive: true });
+        }else if(fs.existsSync(targetDir)){
+            return {success:false};
+        }
+    } catch (error) {
+        return {success:false};
     }
     console.log("Cloning:", repoUrl);
     await git.clone(authUrl,targetDir);
     console.log("✅ Cloned successfully!");
+    return {success:true}
 }
 
 export const cloneGithubRepo = async ({githubName,repo,destination}:{githubName:string,repo:string,destination:string}) => {
@@ -78,9 +85,10 @@ export const cloneGithubRepo = async ({githubName,repo,destination}:{githubName:
         const accessToken = await getInstallationToken(jwtToken, installationId);
       console.log("->",accessToken)
         const repoUrl = `https://github.com/${githubName}/${repo}`;
-        await cloneRepo(repoUrl, accessToken,destination,repo);
+        const {success} = await cloneRepo(repoUrl, accessToken,destination,repo);
+        return {success}
     } catch (error) {
       //@ts-ignore
-        console.error("❌ Error:", error);
+      return {success:false}
     }
 };
