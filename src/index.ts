@@ -1,11 +1,15 @@
 import express, { Request, Response } from "express";
 import fs from "fs/promises";
+import cors from "cors"
 
 const app = express();
-const PORT = 3000;
+const PORT = 4000;
 const FILE_PATH = "users_key_value_discord.json";
 
 app.use(express.json());
+app.use(cors(
+ { origin:"http://localhost:3000", credentials: true,}
+))
 
 interface UserData {
   [key: string]: string; // Mapping Discord ID → Username
@@ -22,7 +26,7 @@ const loadData = async (): Promise<UserData> => {
 };
 
 const saveData = async (data: UserData): Promise<void> => {
-  await fs.writeFile(FILE_PATH, JSON.stringify(data, null, 0)); // No spaces to minimize size
+  await fs.writeFile(FILE_PATH, JSON.stringify(data, null, 0)); 
 };
 
 //@ts-ignore
@@ -53,5 +57,4 @@ app.get("/discord/user/:discord_id", async (req, res) => {
   res.json({ discord_id, username });
 });
 
-// Start server
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

@@ -66,7 +66,6 @@ async function cloneRepo(repoUrl:string, token:string) {
     console.log("✅ Cloned successfully!");
 }
 
-// Main Execution
 (async () => {
     try {
         const jwtToken = generateJwt();
