@@ -1,5 +1,6 @@
 import fs from "fs";
 import jwt from "jsonwebtoken";
+import path from "path";
 import simpleGit from "simple-git";
 
 // Load GitHub App credentials
@@ -56,27 +57,30 @@ async function getInstallationToken(jwtToken:string, installationId:string) {
 }
 
 // Step 4: Clone Repository
-async function cloneRepo(repoUrl:string, token:string) {
+async function cloneRepo(repoUrl:string, token:string,destination:string,repo:string) {
+    const targetDir = path.join(process.cwd(), `clonedRepos`,destination); 
     const git = simpleGit();
     const authUrl = repoUrl.replace("https://", `https://x-access-token:${token}@`);
 
-    
+    if (!fs.existsSync(targetDir)) {
+        fs.mkdirSync(targetDir, { recursive: true });
+    }
     console.log("Cloning:", repoUrl);
-    await git.clone(authUrl);
+    await git.clone(authUrl,targetDir);
     console.log("✅ Cloned successfully!");
 }
 
-(async () => {
+export const cloneGithubRepo = async ({githubName,repo,destination}:{githubName:string,repo:string,destination:string}) => {
     try {
         const jwtToken = generateJwt();
         const installationId = await getInstallationId(jwtToken);
         console.log("installationId",installationId)
         const accessToken = await getInstallationToken(jwtToken, installationId);
       console.log("->",accessToken)
-        const repoUrl = "https://github.com/SharkFishDeveloper/Code-Chef";
-        await cloneRepo(repoUrl, accessToken);
+        const repoUrl = `https://github.com/${githubName}/${repo}`;
+        await cloneRepo(repoUrl, accessToken,destination,repo);
     } catch (error) {
       //@ts-ignore
         console.error("❌ Error:", error);
     }
-})();
+};

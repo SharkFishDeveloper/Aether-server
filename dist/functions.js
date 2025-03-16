@@ -12,8 +12,10 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.cloneGithubRepo = void 0;
 const fs_1 = __importDefault(require("fs"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
+const path_1 = __importDefault(require("path"));
 const simple_git_1 = __importDefault(require("simple-git"));
 // Load GitHub App credentials
 const APP_ID = 1178184;
@@ -61,27 +63,32 @@ function getInstallationToken(jwtToken, installationId) {
     });
 }
 // Step 4: Clone Repository
-function cloneRepo(repoUrl, token) {
+function cloneRepo(repoUrl, token, destination, repo) {
     return __awaiter(this, void 0, void 0, function* () {
+        const targetDir = path_1.default.join(process.cwd(), `clonedRepos`, destination);
         const git = (0, simple_git_1.default)();
         const authUrl = repoUrl.replace("https://", `https://x-access-token:${token}@`);
+        if (!fs_1.default.existsSync(targetDir)) {
+            fs_1.default.mkdirSync(targetDir, { recursive: true });
+        }
         console.log("Cloning:", repoUrl);
-        yield git.clone(authUrl);
+        yield git.clone(authUrl, targetDir);
         console.log("✅ Cloned successfully!");
     });
 }
-(() => __awaiter(void 0, void 0, void 0, function* () {
+const cloneGithubRepo = ({ githubName, repo, destination }) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const jwtToken = generateJwt();
         const installationId = yield getInstallationId(jwtToken);
         console.log("installationId", installationId);
         const accessToken = yield getInstallationToken(jwtToken, installationId);
         console.log("->", accessToken);
-        const repoUrl = "https://github.com/SharkFishDeveloper/Code-Chef";
-        yield cloneRepo(repoUrl, accessToken);
+        const repoUrl = `https://github.com/${githubName}/${repo}`;
+        yield cloneRepo(repoUrl, accessToken, destination, repo);
     }
     catch (error) {
         //@ts-ignore
         console.error("❌ Error:", error);
     }
-}))();
+});
+exports.cloneGithubRepo = cloneGithubRepo;
