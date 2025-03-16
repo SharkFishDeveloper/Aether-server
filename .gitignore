@@ -2,3 +2,4 @@ node_modules
 github_key.pem
 clonedRepos
 .env
+users_key_value_discord.json
