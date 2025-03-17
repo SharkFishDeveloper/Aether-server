@@ -6,6 +6,8 @@ import fs from "fs";
 import path from "path";
 import axios from "axios"
 import { diffLines } from "diff";
+import { execSync } from "child_process";
+import { createPR } from "./util/createPR";
 require('dotenv').config()
 
 const bot = new Client({
@@ -22,7 +24,7 @@ const bot = new Client({
 const TOKEN = process.env.DISCORD_TOKEN;
 const USER_REQUESTS: Record<string, { timestamp: number; repo: string;path:string, issues: string[] }> = {};
 
-const NEW_REPO_TIME_LIMIT = 5 * 60 * 1000; 
+const NEW_REPO_TIME_LIMIT = 60 * 5 * 1000; 
 
 export const sendMessageToUser = async (discordId: string, message: string) => {
     try {
@@ -52,22 +54,22 @@ export const startBot = () => {
 
     if (extractedData.repo && extractedData.path && extractedData.issue) {
  
-        message.reply(`✅ Received your request!\n**Repo:** ${extractedData.repo}\n**Path:** ${extractedData.path}\n**Issue:** ${extractedData.issue}`);
+        message.author.send(`✅ Received your request!\n**Repo:** ${extractedData.repo}\n**Path:** ${extractedData.path}\n**Issue:** ${extractedData.issue}`);
         
         const now = Date.now();
 
  
 
-        if(!username || username === "")return message.reply(`User not registered, please connect to Aether Ai properly`)
-
+        if(!username || username === "")return message.author.send(`User not registered, please connect to Aether Ai properly`)
+          
           if (USER_REQUESTS[username]) {
             const lastRequest = USER_REQUESTS[username]; // Get the stored request
-        
+            // console.log("TIME LEFT - ",Date.now() - (USER_REQUESTS[username].timestamp ?? 0) )
             if (
                 lastRequest.repo !== extractedData.repo && // If the user is switching to a new repo
                 now - lastRequest.timestamp < NEW_REPO_TIME_LIMIT // And within 5 min
             ) {
-                return message.reply("⏳ **Rate limit reached!** Try again after 5 minutes.");
+                return message.author.send("⏳ **Rate limit reached!** Try again after 5 minutes.");
             }
         }else{
           USER_REQUESTS[username]={timestamp:Date.now(),repo:extractedData.repo,issues:[extractedData.issue],path:extractedData.path}
@@ -76,22 +78,22 @@ export const startBot = () => {
 
 
         const {success} = await cloneGithubRepo({githubName:username,repo:extractedData.repo,destination:`${username}/${extractedData.repo}`})
-        if(!success){ message.reply('Already cloned repository')}
+        if(!success){ message.author.send('Already cloned repository')}
         else{
-           message.reply(`\nCloned ${extractedData.repo}`);
+           message.author.send(`\nCloned ${extractedData.repo}`);
         }
 
         const filePath = path.join(process.cwd(),`/clonedRepos/${username}/${extractedData.repo}`, extractedData.path);
 
         if (!fs.existsSync(filePath)) {
-          return message.reply(`⚠️ File not found at path: ${extractedData.path}, please send again,
+          return message.author.send(`⚠️ File not found at path: ${extractedData.path}, please send again,
             in the same format as before`);
         }
   
         const fileContent = fs.readFileSync(filePath, "utf-8");
         const {code,explanation,error} = await getGeminiResponse(fileContent,[extractedData.issue]);
         if(error){
-          return message.reply(error);
+          return message.author.send(error);
         }
         if (code) {
           try {
@@ -109,18 +111,20 @@ export const startBot = () => {
             const maxLength = 800; // Reserve some space for extra text
             const truncatedPreview =  preview.length > maxLength ? preview.slice(0, maxLength) + "\n..." : preview;
             fs.writeFileSync(filePath, code);
-            await message.reply(`**Explanation:**\n${explanation.slice(0,1999)}`);
+            const cleanedExplanation = explanation.replace(/\n\s*\n/g, '\n').trim();
+            await message.author.send(`**Explanation:**\n${cleanedExplanation.slice(0, 1400)}`);
+
             await new Promise(resolve => setTimeout(resolve, 1000));
 
-            await message.reply(`**Code:** \`\`\`\n${truncatedPreview}\n\`\`\``);
+            await message.author.send(`**Code:** \`\`\`\n${truncatedPreview}\n\`\`\``);
               
           } catch (error) {
-            message.reply("❌ Error applying changes.");
+            message.author.send("❌ Error applying changes.");
           }
         }
         //* THIS ELSE BLOCK IS REQUIRED WHEN THERE IS NO CODE BLOCK AS IN CASE OF A QUERY
         else{
-          return message.reply(explanation);
+          return message.author.send(explanation.slice(0,1800));
         } 
       } 
       
@@ -128,38 +132,104 @@ export const startBot = () => {
       
       
       else {
-        if(!username)return message.reply('You are not registerd. Please goto Aether AI website')
+          if(!username){return message.author.send('You are not registerd. Please goto Aether AI website')}
         
-        const pathRegex = /^path:\s*\S+/;
-        let filePath='';
-
-
-        if(!USER_REQUESTS[username]){
-            return message.reply("⚠️ Please follow the format:\nrepo: <repo_name>\npath: <folder/file>\nissue: <describe the issue>");
-        }
-        // if(USER_REQUESTS[username].timestamp - Date.now() > 900000){
-        //   return message.reply('Time limit exceeded wait')
-        // }
-        if (pathRegex.test(message.content)) {
-           filePath = path.join(process.cwd(),`/clonedRepos/${username}/${USER_REQUESTS[username].repo}/${message.content}`);
           
-          if (!fs.existsSync(filePath)) {
-            return message.reply(`⚠️ File not found at path: ${extractedData.path}, please send again,
-              in the same format as before`);
+          
+          if(!USER_REQUESTS[username]){
+            return message.author.send("⚠️ Please follow the format:\nrepo: <repo_name>\npath: <folder/file>\nissue: <describe the issue>");
           }
-          else{
-            USER_REQUESTS[username].path = message.content;
-            USER_REQUESTS[username].issues = [];
-            return message.reply(`OKay, now your file path is -> ${message.content.split(":")}`)
+
+
+          const pathRegex =  /^\s*path\s*:\s*(.+?)\s*$/; 
+          let filePath='';
+
+            const match = message.content.match(pathRegex);
+            if(match){
+              if (match[1]) {
+                  const extractedPath = match[1]; 
+                  filePath = path.join(process.cwd(), `/clonedRepos/${username}/${USER_REQUESTS[username].repo}/${extractedPath}`);
+                if (!fs.existsSync(filePath)) {
+                  return message.author.send(`⚠️ File not found at path: ${match[1]}, please send again,
+                    in the same format as before , ${filePath}`);
+                }
+                else{
+                  USER_REQUESTS[username].path = match[1];
+                  USER_REQUESTS[username].issues = [];
+                  return message.author.send(`OKay, now your file path is -> ${match[1]}`)
+                }
+              }
+            }
+        //* IT IS A NORMAL REQUEST , no change of file path
+        const prRegex = /^createPR\s*:\s*(.+)$/;
+        filePath = path.join(process.cwd(),`/clonedRepos/${username}/${USER_REQUESTS[username].repo}/${USER_REQUESTS[username].path}`);
+
+        if (prRegex.test(message.content)) {
+          try {
+              process.chdir(path.dirname(filePath));
+              execSync("git add .");
+      
+              //@ts-ignore
+              const commitMessage = message.content.match(prRegex)[1];
+              execSync(`git commit -m "${commitMessage}"`);
+      
+              const now = new Date();
+              const formattedDate = now
+                  .toLocaleString("en-GB", { day: "2-digit", month: "2-digit", year: "2-digit" })
+                  .replace(/\//g, "-");
+      
+              const hours = now.getHours();
+              const period = hours >= 12 ? "pm" : "am";
+              const hour12 = hours % 12 === 0 ? 12 : hours % 12;
+              const minutes = now.getMinutes().toString().padStart(2, "0");
+              const seconds = now.getSeconds().toString().padStart(2, "0");
+      
+              const branchName = `aether-bot-${formattedDate}-${hour12}${period}-${minutes}-${seconds}`;
+      
+              try {
+                  // Check if branch exists before creating
+                  execSync(`git rev-parse --verify ${branchName}`, { stdio: "ignore" });
+                  execSync(`git checkout ${branchName}`);
+              } catch {
+                  execSync(`git checkout -b ${branchName}`);
+              }
+      
+              try {
+                  execSync(`git push origin ${branchName}`);
+      
+                  createPR(branchName, username, USER_REQUESTS[username].repo)
+                      .then((result) => {
+                          if (result.success) {
+                            return message.author.send(`✅ PR Created: ${result.pr_url}`);
+                          } else {
+                              message.author.send(`❌ PR creation failed: ${result.message}`);
+                          }
+                      })
+                      .catch((error) => {
+                        return message.author.send(`🚨 Error creating PR: ${error.message}`);
+                      });
+      
+                  return message.author.send(`✅ Branch ${branchName} pushed successfully!`);
+              } catch (error) {
+                return message.author.send(`❌ Failed to push branch: ${branchName}`);
+              }
+          } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            return message.author.send(`🚨 Error: ${errorMessage}`);
+          } finally {
+              process.chdir("../../../"); // Ensure directory change happens
           }
-        }else {
-          filePath = path.join(process.cwd(),`/clonedRepos/${username}/${USER_REQUESTS[username].repo}/${USER_REQUESTS[username].path}`);
-        }
+      }
+      
+
+
+
+
         let fileContent = ""; 
         try {
           fileContent = fs.readFileSync(filePath, 'utf-8');
         } catch (error) {
-          return message.reply(`⚠️ There was an error reading the file at path: ${filePath}`);
+          return message.author.send(`⚠️ There was an error reading the file at path: ${filePath}`);
         }
         
         if (USER_REQUESTS[username] && USER_REQUESTS[username].repo) {
@@ -167,7 +237,7 @@ export const startBot = () => {
           USER_REQUESTS[username].issues = USER_REQUESTS[username].issues.slice(-5);
           const {code,explanation,error} = await getGeminiResponse(fileContent,USER_REQUESTS[username].issues);
           if(error){
-            return message.reply(error);
+            return message.author.send(error);
           }
           if (code) {
             try {
@@ -185,19 +255,20 @@ export const startBot = () => {
               const maxLength = 800; // Reserve some space for extra text
               const truncatedPreview =  preview.length > maxLength ? preview.slice(0, maxLength) + "\n..." : preview;
               fs.writeFileSync(filePath, code);
-              await message.reply(`**Explanation:**\n${explanation.slice(0,1999)}`);
+              const cleanedExplanation = explanation.replace(/\n\s*\n/g, '\n').trim();
+              await message.author.send(`**Explanation:**\n${cleanedExplanation.slice(0, 1400)}`);
               await new Promise(resolve => setTimeout(resolve, 1000));
 
-              await message.reply(`**Code:** \`\`\`\n${truncatedPreview}\n\`\`\``);
+              await message.author.send(`**Code:** \`\`\`\n${truncatedPreview}\n\`\`\``);
   
                 
             } catch (error) {
-              message.reply("❌ Error applying changes.");
+              message.author.send("❌ Error applying changes.");
             }
           }
           //* THIS ELSE BLOCK IS REQUIRED WHEN THERE IS NO CODE BLOCK AS IN CASE OF A QUERY
           else{
-            return message.reply(explanation);
+            return message.author.send(explanation.slice(0,1800));
           }
           
         }
@@ -226,15 +297,16 @@ const getGeminiResponse = async (fileContent: string, issues: string[]) => {
       - If the new issue is related to past issues (same error type, same function, or a repeated mistake), consider the history and suggest improvements accordingly.
       - If the issue is entirely new (unrelated to past errors), do not reference history.
       - If unsure, prioritize the latest issue and only mention past history if it adds value.
-      - **If the latest instruction contradicts previous ones, remove past constraints and follow the latest instruction strictly.**
+      - If the latest instruction contradicts previous ones, remove past constraints and follow the latest instruction strictly.
       - Do not assume constraints (e.g., line limits, style choices) from history if the user explicitly changes them.
 
 
       ⚠️ Important:
-      - Provide the full corrected code separately.
-      - Provide explanations separately.
+      - Do NOT modify the code unless the user explicitly requests an updated version.
+      - Do not provide explanations if the user explicitly requests not to. Otherwise, provide the explanations.
+      - Do not add unnecessary blank lines or excessive spaces in explanations unless mentioned specificaly.
       - Use this strict format only:
-      - If the user asks for a query and it is very clear they are not asking for code then keep code block empty and give explanation in explanation block
+      - If the user's question does not require code, respond with only the explanation. Do not include an empty code block or any placeholder text —simply omit the code section entirely.
       
       ### Code:
       \`\`\`
@@ -244,7 +316,6 @@ const getGeminiResponse = async (fileContent: string, issues: string[]) => {
       ### Explanation:
       (Provide explanations, reasoning, and suggestions here separately)`;
 
-      console.log(prompt)
     const response = await axios.post(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
       {
@@ -267,11 +338,31 @@ const getGeminiResponse = async (fileContent: string, issues: string[]) => {
       explanation: explanationMatch ? explanationMatch[1].trim() : "No explanation provided",
       error:null
     };
+    console.log(formattedResponse)
     return formattedResponse;
   } catch (error) {
     return {code:"",explanation:"",error:"⚠️ Error fetching response from AI."}
   }
 };
+
+
+// setInterval(() => {
+//   const now = Date.now();
+
+//   Object.entries(USER_REQUESTS).forEach(([username, data]) => {
+//     if (now - data.timestamp > 15 * 60* 1000) { // 15 min threshold
+//       const userRepoPath = path.join(process.cwd(), `clonedRepos/${username}`);
+
+//       if (fs.existsSync(userRepoPath)) {
+//         fs.rmSync(userRepoPath, { recursive: true, force: true });
+//         console.log(`✅ Deleted repo folder for ${username}/${data.repo}`);
+//       }
+
+//       // Remove user from tracking
+//       delete USER_REQUESTS[username];
+//     }
+//   });
+// }, 60 * 1000); // Runs every 1 minute
 
 
 export default bot;

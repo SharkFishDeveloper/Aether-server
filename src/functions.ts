@@ -2,13 +2,13 @@ import fs from "fs";
 import jwt from "jsonwebtoken";
 import path from "path";
 import simpleGit from "simple-git";
-
+require("dotenv").config()
 // Load GitHub App credentials
 const APP_ID = 1178184;
-const PRIVATE_KEY = fs.readFileSync("./github_key.pem", "utf8");
+// const PRIVATE_KEY = fs.readFileSync("./github_key.pem", "utf8");
+const PRIVATE_KEY = (process.env.GITHUB_PRIVATE_KEY || "").replace(/\\n/g, "\n");
 
-// Step 1: Generate a JWT
-function generateJwt() {
+export function generateJwt() {
     const now = Math.floor(Date.now() / 1000);
     return jwt.sign(
         {
@@ -22,7 +22,7 @@ function generateJwt() {
 }
 
 // Step 2: Get Installation ID
-async function getInstallationId(jwtToken:string) {
+export async function getInstallationId(jwtToken:string) {
     const response = await fetch("https://api.github.com/app/installations", {
         method: "GET",
         headers: {
@@ -31,14 +31,13 @@ async function getInstallationId(jwtToken:string) {
         },
     });
     const installations = await response.json();
-    console.log(installations)
     if (!installations.length) throw new Error("No installations found!");
     
     return installations[0].id;
 }
 
 // Step 3: Get Installation Access Token
-async function getInstallationToken(jwtToken:string, installationId:string) {
+export async function getInstallationToken(jwtToken:string, installationId:string) {
     const response = await fetch(
         `https://api.github.com/app/installations/${installationId}/access_tokens`,
         {
@@ -81,7 +80,6 @@ export const cloneGithubRepo = async ({githubName,repo,destination}:{githubName:
     try {
         const jwtToken = generateJwt();
         const installationId = await getInstallationId(jwtToken);
-        console.log("installationId",installationId)
         const accessToken = await getInstallationToken(jwtToken, installationId);
       console.log("->",accessToken)
         const repoUrl = `https://github.com/${githubName}/${repo}`;

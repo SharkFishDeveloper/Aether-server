@@ -12,15 +12,16 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.cloneGithubRepo = void 0;
+exports.cloneGithubRepo = exports.getInstallationToken = exports.getInstallationId = exports.generateJwt = void 0;
 const fs_1 = __importDefault(require("fs"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const path_1 = __importDefault(require("path"));
 const simple_git_1 = __importDefault(require("simple-git"));
+require("dotenv").config();
 // Load GitHub App credentials
 const APP_ID = 1178184;
-const PRIVATE_KEY = fs_1.default.readFileSync("./github_key.pem", "utf8");
-// Step 1: Generate a JWT
+// const PRIVATE_KEY = fs.readFileSync("./github_key.pem", "utf8");
+const PRIVATE_KEY = (process.env.GITHUB_PRIVATE_KEY || "").replace(/\\n/g, "\n");
 function generateJwt() {
     const now = Math.floor(Date.now() / 1000);
     return jsonwebtoken_1.default.sign({
@@ -29,6 +30,7 @@ function generateJwt() {
         iss: APP_ID, // GitHub App ID
     }, PRIVATE_KEY, { algorithm: "RS256" });
 }
+exports.generateJwt = generateJwt;
 // Step 2: Get Installation ID
 function getInstallationId(jwtToken) {
     return __awaiter(this, void 0, void 0, function* () {
@@ -40,12 +42,12 @@ function getInstallationId(jwtToken) {
             },
         });
         const installations = yield response.json();
-        console.log(installations);
         if (!installations.length)
             throw new Error("No installations found!");
         return installations[0].id;
     });
 }
+exports.getInstallationId = getInstallationId;
 // Step 3: Get Installation Access Token
 function getInstallationToken(jwtToken, installationId) {
     return __awaiter(this, void 0, void 0, function* () {
@@ -62,6 +64,7 @@ function getInstallationToken(jwtToken, installationId) {
         return data.token; // GitHub access token
     });
 }
+exports.getInstallationToken = getInstallationToken;
 // Step 4: Clone Repository
 function cloneRepo(repoUrl, token, destination, repo) {
     return __awaiter(this, void 0, void 0, function* () {
@@ -89,7 +92,6 @@ const cloneGithubRepo = ({ githubName, repo, destination }) => __awaiter(void 0,
     try {
         const jwtToken = generateJwt();
         const installationId = yield getInstallationId(jwtToken);
-        console.log("installationId", installationId);
         const accessToken = yield getInstallationToken(jwtToken, installationId);
         console.log("->", accessToken);
         const repoUrl = `https://github.com/${githubName}/${repo}`;
