@@ -12,77 +12,61 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const fs_1 = __importDefault(require("fs"));
-const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
-const simple_git_1 = __importDefault(require("simple-git"));
-// Load GitHub App credentials
-const APP_ID = 1178184;
-const PRIVATE_KEY = fs_1.default.readFileSync("./aether-server.2025-03-14.private-key.pem", "utf8");
-// Step 1: Generate a JWT
-function generateJwt() {
-    const now = Math.floor(Date.now() / 1000);
-    return jsonwebtoken_1.default.sign({
-        iat: now, // Issued at
-        exp: now + 300, // Expiry (10 mins)
-        iss: APP_ID, // GitHub App ID
-    }, PRIVATE_KEY, { algorithm: "RS256" });
-}
-// Step 2: Get Installation ID
-function getInstallationId(jwtToken) {
-    return __awaiter(this, void 0, void 0, function* () {
-        const response = yield fetch("https://api.github.com/app/installations", {
-            method: "GET",
-            headers: {
-                Authorization: `Bearer ${jwtToken}`,
-                Accept: "application/vnd.github.v3+json",
-            },
-        });
-        const installations = yield response.json();
-        console.log(installations);
-        if (!installations.length)
-            throw new Error("No installations found!");
-        return installations[0].id;
-    });
-}
-// Step 3: Get Installation Access Token
-function getInstallationToken(jwtToken, installationId) {
-    return __awaiter(this, void 0, void 0, function* () {
-        const response = yield fetch(`https://api.github.com/app/installations/${installationId}/access_tokens`, {
-            method: "POST",
-            headers: {
-                Authorization: `Bearer ${jwtToken}`,
-                Accept: "application/vnd.github.v3+json",
-            },
-        });
-        const data = yield response.json();
-        if (!data.token)
-            throw new Error("Failed to fetch installation token!");
-        return data.token; // GitHub access token
-    });
-}
-// Step 4: Clone Repository
-function cloneRepo(repoUrl, token) {
-    return __awaiter(this, void 0, void 0, function* () {
-        const git = (0, simple_git_1.default)();
-        const authUrl = repoUrl.replace("https://", `https://x-access-token:${token}@`);
-        console.log("Cloning:", repoUrl);
-        yield git.clone(authUrl);
-        console.log("✅ Cloned successfully!");
-    });
-}
-// Main Execution
-(() => __awaiter(void 0, void 0, void 0, function* () {
+exports.loadData = void 0;
+const express_1 = __importDefault(require("express"));
+const promises_1 = __importDefault(require("fs/promises"));
+const cors_1 = __importDefault(require("cors"));
+const bot_1 = require("./bot");
+const Hello_1 = require("./util/Hello");
+const app = (0, express_1.default)();
+const PORT = 4000;
+const FILE_PATH = "users_key_value_discord.json";
+(0, bot_1.startBot)(); //* Start discord bot
+app.use(express_1.default.json());
+app.use((0, cors_1.default)({ origin: "http://localhost:3000", credentials: true, }));
+const loadData = () => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const jwtToken = generateJwt();
-        const installationId = yield getInstallationId(jwtToken);
-        console.log("installationId", installationId);
-        const accessToken = yield getInstallationToken(jwtToken, installationId);
-        console.log("->", accessToken);
-        const repoUrl = "https://github.com/SharkFishDeveloper/Code-Chef";
-        yield cloneRepo(repoUrl, accessToken);
+        yield promises_1.default.access(FILE_PATH).catch(() => promises_1.default.writeFile(FILE_PATH, "{}")); // Create file if missing
+        const data = yield promises_1.default.readFile(FILE_PATH, "utf-8");
+        return JSON.parse(data);
     }
-    catch (error) {
-        //@ts-ignore
-        console.error("❌ Error:", error);
+    catch (err) {
+        return {}; // Return empty object on error
     }
-}))();
+});
+exports.loadData = loadData;
+const saveData = (data) => __awaiter(void 0, void 0, void 0, function* () {
+    yield promises_1.default.writeFile(FILE_PATH, JSON.stringify(data, null, 0));
+});
+//@ts-ignore
+app.post("/discord/authentication", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { discord_id, username } = req.body;
+    if (!discord_id || !username) {
+        return res.status(400).json({ error: "Missing discord_id or username" });
+    }
+    const data = yield (0, exports.loadData)();
+    // Check if username already exists under a different discord_id
+    const existingUser = Object.entries(data).find(([id, name]) => name === username);
+    if (existingUser && existingUser[0] !== discord_id) {
+        return res.status(409).json({ error: "Username already in use by another user" });
+    }
+    // Update or insert the new mapping
+    data[discord_id] = username;
+    yield saveData(data);
+    const messageResponse = yield (0, bot_1.sendMessageToUser)(discord_id, `Hello ${username}, ${Hello_1.DiscordChatRulesSyntax}`);
+    if (messageResponse === null || messageResponse === void 0 ? void 0 : messageResponse.error) {
+        return res.status(500).json(messageResponse);
+    }
+    res.json({ message: "User stored successfully", data });
+}));
+//@ts-ignore
+app.get("/discord/user/:discord_id", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { discord_id } = req.params;
+    const data = yield (0, exports.loadData)();
+    const username = data[discord_id];
+    if (!username) {
+        return res.status(404).json({ error: "User not found" });
+    }
+    res.json({ discord_id, username });
+}));
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
