@@ -12,8 +12,7 @@ export const DiscordChatRulesSyntax = `
 
     **ℹ️ Important:**  
     You only need to follow these steps **once** to get started. After setup, you can communicate naturally with Aether AI.  
-    Do not try to deliberately hallucinate Aether
-
+    Do not try to deliberately hallucinate Aether.
 
     Following these guidelines will help us assist you more effectively. 🚀
 

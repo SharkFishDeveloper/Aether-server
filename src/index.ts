@@ -7,7 +7,7 @@ import { DiscordChatRulesSyntax } from "./util/Hello";
 
 
 const app = express();
-const PORT = 4000;
+const PORT = 3000;
 const FILE_PATH = "users_key_value_discord.json";
 startBot(); //* Start discord bot
 
