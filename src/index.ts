@@ -76,4 +76,9 @@ app.get("/discord/user/:discord_id", async (req, res) => {
   res.json({ discord_id, username });
 });
 
+//@ts-ignore
+app.get("/",async(req,res)=>{
+  return res.json({message:"HELLO WORLD"})
+})
+
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
