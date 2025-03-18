@@ -12,9 +12,9 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.loadData = void 0;
+exports.saveData = exports.loadData = void 0;
 const express_1 = __importDefault(require("express"));
-const promises_1 = __importDefault(require("fs/promises"));
+const fs_1 = __importDefault(require("fs"));
 const cors_1 = __importDefault(require("cors"));
 const bot_1 = require("./bot");
 const Hello_1 = require("./util/Hello");
@@ -29,7 +29,7 @@ app.use(express_1.default.json());
 app.use((0, cors_1.default)({ origin: "https://aether-ai-two.vercel.app", credentials: true, }));
 const removeGitLock = () => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        yield promises_1.default.unlink("/opt/render/.gitconfig.lock");
+        yield fs_1.default.unlinkSync("/opt/render/.gitconfig.lock");
         console.log("✅ Removed Git lock file (if it existed)");
     }
     catch (err) {
@@ -75,7 +75,7 @@ const fetchUsersFromDB = () => __awaiter(void 0, void 0, void 0, function* () {
                 userMap[user.discordId] = user.name;
             }
         });
-        yield promises_1.default.writeFile(FILE_PATH, JSON.stringify(userMap, null, 2));
+        yield fs_1.default.writeFileSync(FILE_PATH, JSON.stringify(userMap, null, 2));
         console.log("✅ User data loaded successfully into users_key_value_discord.json");
     }
     catch (error) {
@@ -83,23 +83,29 @@ const fetchUsersFromDB = () => __awaiter(void 0, void 0, void 0, function* () {
     }
 });
 fetchUsersFromDB();
-const loadData = () => __awaiter(void 0, void 0, void 0, function* () {
+const loadData = () => {
     try {
-        const filedata = promises_1.default.readFile(FILE_PATH, "utf-8");
-        console.log(filedata);
-        yield promises_1.default.access(FILE_PATH).catch(() => promises_1.default.writeFile(FILE_PATH, "{}"));
-        promises_1.default;
-        const data = yield promises_1.default.readFile(FILE_PATH, "utf-8");
+        if (!fs_1.default.existsSync(FILE_PATH)) {
+            fs_1.default.writeFileSync(FILE_PATH, "{}"); // Create file if missing
+        }
+        const data = fs_1.default.readFileSync(FILE_PATH, "utf-8");
         return JSON.parse(data);
     }
     catch (err) {
+        console.error("Error loading data:", err);
         return {}; // Return empty object on error
     }
-});
+};
 exports.loadData = loadData;
-const saveData = (data) => __awaiter(void 0, void 0, void 0, function* () {
-    yield promises_1.default.writeFile(FILE_PATH, JSON.stringify(data, null, 0));
-});
+const saveData = (data) => {
+    try {
+        fs_1.default.writeFileSync(FILE_PATH, JSON.stringify(data, null, 2));
+    }
+    catch (err) {
+        console.error("Error saving data:", err);
+    }
+};
+exports.saveData = saveData;
 //@ts-ignore
 app.post("/discord/authentication", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { discord_id, username } = req.body;
@@ -114,7 +120,7 @@ app.post("/discord/authentication", (req, res) => __awaiter(void 0, void 0, void
     }
     // Update or insert the new mapping
     data[discord_id] = username;
-    yield saveData(data);
+    yield (0, exports.saveData)(data);
     const messageResponse = yield (0, bot_1.sendMessageToUser)(discord_id, `Hello ${username}, ${Hello_1.DiscordChatRulesSyntax}`);
     if (messageResponse === null || messageResponse === void 0 ? void 0 : messageResponse.error) {
         return res.status(500).json(messageResponse);

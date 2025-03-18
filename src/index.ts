@@ -1,5 +1,5 @@
 import express, { Request, Response } from "express";
-import fs from "fs/promises";
+import fs from "fs";
 import cors from "cors"
 import { sendMessageToUser, startBot } from "./bot";
 import { DiscordChatRulesSyntax } from "./util/Hello";
@@ -21,7 +21,7 @@ app.use(cors(
 
 const removeGitLock = async () => {
   try {
-    await fs.unlink("/opt/render/.gitconfig.lock");
+    await fs.unlinkSync("/opt/render/.gitconfig.lock");
     console.log("✅ Removed Git lock file (if it existed)");
   } catch (err: any) {
     if (err.code !== "ENOENT") {
@@ -78,7 +78,7 @@ const fetchUsersFromDB = async () => {
       }
     });
 
-    await fs.writeFile(FILE_PATH, JSON.stringify(userMap, null, 2));
+    await fs.writeFileSync(FILE_PATH, JSON.stringify(userMap, null, 2));
     console.log("✅ User data loaded successfully into users_key_value_discord.json");
   } catch (error) {
     console.error("❌ Failed to fetch users from database:", error);
@@ -90,23 +90,27 @@ fetchUsersFromDB();
 
 
 
-export const loadData = async (): Promise<UserData> => {
+export const loadData = (): UserData => {
   try {
-    const filedata = fs.readFile(FILE_PATH,"utf-8");
-    console.log(filedata)
-    await fs.access(FILE_PATH).catch(() => fs.writeFile(FILE_PATH, "{}")); 
-    fs
-    const data = await fs.readFile(FILE_PATH, "utf-8");
+    if (!fs.existsSync(FILE_PATH)) {
+      fs.writeFileSync(FILE_PATH, "{}"); // Create file if missing
+    }
+
+    const data = fs.readFileSync(FILE_PATH, "utf-8");
     return JSON.parse(data) as UserData;
   } catch (err) {
+    console.error("Error loading data:", err);
     return {}; // Return empty object on error
   }
 };
 
-const saveData = async (data: UserData): Promise<void> => {
-  await fs.writeFile(FILE_PATH, JSON.stringify(data, null, 0)); 
+export const saveData = (data: UserData): void => {
+  try {
+    fs.writeFileSync(FILE_PATH, JSON.stringify(data, null, 2));
+  } catch (err) {
+    console.error("Error saving data:", err);
+  }
 };
-
 //@ts-ignore
 app.post("/discord/authentication", async (req, res) => {
   const { discord_id, username }: { discord_id: string; username: string } = req.body;
