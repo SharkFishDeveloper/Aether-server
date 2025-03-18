@@ -23,7 +23,7 @@ const PORT = 3000;
 const FILE_PATH = "users_key_value_discord.json";
 (0, bot_1.startBot)(); //* Start discord bot
 app.use(express_1.default.json());
-app.use((0, cors_1.default)({ origin: "http://localhost:3000", credentials: true, }));
+app.use((0, cors_1.default)({ origin: "https://aether-ai-two.vercel.app", credentials: true, }));
 const loadData = () => __awaiter(void 0, void 0, void 0, function* () {
     try {
         yield promises_1.default.access(FILE_PATH).catch(() => promises_1.default.writeFile(FILE_PATH, "{}")); // Create file if missing
