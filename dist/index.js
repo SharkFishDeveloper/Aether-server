@@ -19,7 +19,7 @@ const cors_1 = __importDefault(require("cors"));
 const bot_1 = require("./bot");
 const Hello_1 = require("./util/Hello");
 const app = (0, express_1.default)();
-const PORT = 4000;
+const PORT = 3000;
 const FILE_PATH = "users_key_value_discord.json";
 (0, bot_1.startBot)(); //* Start discord bot
 app.use(express_1.default.json());
@@ -68,5 +68,9 @@ app.get("/discord/user/:discord_id", (req, res) => __awaiter(void 0, void 0, voi
         return res.status(404).json({ error: "User not found" });
     }
     res.json({ discord_id, username });
+}));
+//@ts-ignore
+app.get("/", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    return res.json({ message: "HELLO WORLD" });
 }));
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
