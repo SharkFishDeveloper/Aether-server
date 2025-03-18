@@ -3,12 +3,12 @@ import jwt from "jsonwebtoken";
 import path from "path";
 import simpleGit from "simple-git";
 require("dotenv").config()
-// Load GitHub App credentials
-const APP_ID = 1178184;
-// const PRIVATE_KEY = fs.readFileSync("./github_key.pem", "utf8");
+
+const APP_ID = process.env.GITHUB_APP_ID;
 const PRIVATE_KEY = (process.env.GITHUB_PRIVATE_KEY || "").replace(/\\n/g, "\n");
 
 export function generateJwt() {
+    if(!APP_ID) console.log("NO APP ID");
     const now = Math.floor(Date.now() / 1000);
     return jwt.sign(
         {
@@ -81,7 +81,6 @@ export const cloneGithubRepo = async ({githubName,repo,destination}:{githubName:
         const jwtToken = generateJwt();
         const installationId = await getInstallationId(jwtToken);
         const accessToken = await getInstallationToken(jwtToken, installationId);
-      console.log("->",accessToken)
         const repoUrl = `https://github.com/${githubName}/${repo}`;
         const {success} = await cloneRepo(repoUrl, accessToken,destination,repo);
         return {success}
