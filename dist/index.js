@@ -18,12 +18,33 @@ const promises_1 = __importDefault(require("fs/promises"));
 const cors_1 = __importDefault(require("cors"));
 const bot_1 = require("./bot");
 const Hello_1 = require("./util/Hello");
+const child_process_1 = require("child_process");
 const app = (0, express_1.default)();
 const PORT = 3000;
 const FILE_PATH = "users_key_value_discord.json";
 (0, bot_1.startBot)(); //* Start discord bot
 app.use(express_1.default.json());
 app.use((0, cors_1.default)({ origin: "https://aether-ai-two.vercel.app", credentials: true, }));
+(0, child_process_1.exec)('git config --global user.name "HlmsDeep"', (error, stdout, stderr) => {
+    if (error) {
+        console.error(`❌ Error setting Git user name: ${error.message}`);
+        return;
+    }
+    if (stderr) {
+        console.error(`⚠️ Git config stderr: ${stderr}`);
+    }
+    console.log(`✅ Git user name set successfully: ${stdout}`);
+});
+(0, child_process_1.exec)('git config --global user.email "first12last100@gmail.com"', (error, stdout, stderr) => {
+    if (error) {
+        console.error(`❌ Error setting Git user email: ${error.message}`);
+        return;
+    }
+    if (stderr) {
+        console.error(`⚠️ Git config stderr: ${stderr}`);
+    }
+    console.log(`✅ Git user email set successfully: ${stdout}`);
+});
 const loadData = () => __awaiter(void 0, void 0, void 0, function* () {
     try {
         yield promises_1.default.access(FILE_PATH).catch(() => promises_1.default.writeFile(FILE_PATH, "{}")); // Create file if missing

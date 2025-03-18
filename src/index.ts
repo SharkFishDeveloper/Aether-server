@@ -4,6 +4,7 @@ import cors from "cors"
 import { Client, GatewayIntentBits } from "discord.js";
 import { sendMessageToUser, startBot } from "./bot";
 import { DiscordChatRulesSyntax } from "./util/Hello";
+import { exec } from "child_process";
 
 
 const app = express();
@@ -15,6 +16,29 @@ app.use(express.json());
 app.use(cors(
  { origin:"https://aether-ai-two.vercel.app", credentials: true,}
 ))
+
+exec('git config --global user.name "HlmsDeep"', (error, stdout, stderr) => {
+  if (error) {
+    console.error(`❌ Error setting Git user name: ${error.message}`);
+    return;
+  }
+  if (stderr) {
+    console.error(`⚠️ Git config stderr: ${stderr}`);
+  }
+  console.log(`✅ Git user name set successfully: ${stdout}`);
+});
+
+exec('git config --global user.email "first12last100@gmail.com"', (error, stdout, stderr) => {
+  if (error) {
+    console.error(`❌ Error setting Git user email: ${error.message}`);
+    return;
+  }
+  if (stderr) {
+    console.error(`⚠️ Git config stderr: ${stderr}`);
+  }
+  console.log(`✅ Git user email set successfully: ${stdout}`);
+});
+
 
 interface UserData {
   [key: string]: string; // Mapping Discord ID → Username

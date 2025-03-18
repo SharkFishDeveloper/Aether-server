@@ -346,23 +346,23 @@ const getGeminiResponse = async (fileContent: string, issues: string[]) => {
 };
 
 
-// setInterval(() => {
-//   const now = Date.now();
+setInterval(() => {
+  const now = Date.now();
 
-//   Object.entries(USER_REQUESTS).forEach(([username, data]) => {
-//     if (now - data.timestamp > 15 * 60* 1000) { // 15 min threshold
-//       const userRepoPath = path.join(process.cwd(), `clonedRepos/${username}`);
+  Object.entries(USER_REQUESTS).forEach(([username, data]) => {
+    if (now - data.timestamp > 15 * 60* 1000) { // 15 min threshold
+      const userRepoPath = path.join(process.cwd(), `clonedRepos/${username}`);
 
-//       if (fs.existsSync(userRepoPath)) {
-//         fs.rmSync(userRepoPath, { recursive: true, force: true });
-//         console.log(`✅ Deleted repo folder for ${username}/${data.repo}`);
-//       }
+      if (fs.existsSync(userRepoPath)) {
+        fs.rmSync(userRepoPath, { recursive: true, force: true });
+        console.log(`✅ Deleted repo folder for ${username}/${data.repo}`);
+      }
 
-//       // Remove user from tracking
-//       delete USER_REQUESTS[username];
-//     }
-//   });
-// }, 60 * 1000); // Runs every 1 minute
+      // Remove user from tracking
+      delete USER_REQUESTS[username];
+    }
+  });
+}, 60 * 1000); // Runs every 1 minute
 
 
 export default bot;

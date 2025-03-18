@@ -316,18 +316,18 @@ const getGeminiResponse = (fileContent, issues) => __awaiter(void 0, void 0, voi
         return { code: "", explanation: "", error: "⚠️ Error fetching response from AI." };
     }
 });
-// setInterval(() => {
-//   const now = Date.now();
-//   Object.entries(USER_REQUESTS).forEach(([username, data]) => {
-//     if (now - data.timestamp > 15 * 60* 1000) { // 15 min threshold
-//       const userRepoPath = path.join(process.cwd(), `clonedRepos/${username}`);
-//       if (fs.existsSync(userRepoPath)) {
-//         fs.rmSync(userRepoPath, { recursive: true, force: true });
-//         console.log(`✅ Deleted repo folder for ${username}/${data.repo}`);
-//       }
-//       // Remove user from tracking
-//       delete USER_REQUESTS[username];
-//     }
-//   });
-// }, 60 * 1000); // Runs every 1 minute
+setInterval(() => {
+    const now = Date.now();
+    Object.entries(USER_REQUESTS).forEach(([username, data]) => {
+        if (now - data.timestamp > 15 * 60 * 1000) { // 15 min threshold
+            const userRepoPath = path_1.default.join(process.cwd(), `clonedRepos/${username}`);
+            if (fs_1.default.existsSync(userRepoPath)) {
+                fs_1.default.rmSync(userRepoPath, { recursive: true, force: true });
+                console.log(`✅ Deleted repo folder for ${username}/${data.repo}`);
+            }
+            // Remove user from tracking
+            delete USER_REQUESTS[username];
+        }
+    });
+}, 60 * 1000); // Runs every 1 minute
 exports.default = bot;
