@@ -13,7 +13,7 @@ startBot(); //* Start discord bot
 
 app.use(express.json());
 app.use(cors(
- { origin:"http://localhost:3000", credentials: true,}
+ { origin:"https://aether-ai-two.vercel.app", credentials: true,}
 ))
 
 interface UserData {
