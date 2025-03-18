@@ -1,10 +1,10 @@
 import express, { Request, Response } from "express";
 import fs from "fs/promises";
 import cors from "cors"
-import { Client, GatewayIntentBits } from "discord.js";
 import { sendMessageToUser, startBot } from "./bot";
 import { DiscordChatRulesSyntax } from "./util/Hello";
 import { exec } from "child_process";
+import { Pool } from "pg";
 
 
 const app = express();
@@ -39,10 +39,38 @@ exec('git config --global user.email "first12last100@gmail.com"', (error, stdout
   console.log(`✅ Git user email set successfully: ${stdout}`);
 });
 
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: { rejectUnauthorized: false },
+});
 
 interface UserData {
   [key: string]: string; // Mapping Discord ID → Username
 }
+
+const fetchUsersFromDB = async () => {
+  try {
+    const { rows } = await pool.query(`SELECT "discordId", "name" FROM "User" WHERE "discordId" IS NOT NULL`);
+    const userMap: Record<string, string> = {};
+    
+
+    rows.forEach((user) => {
+      if (user.discordId && user.name) {
+        userMap[user.discordId] = user.name;
+      }
+    });
+
+    await fs.writeFile(FILE_PATH, JSON.stringify(userMap, null, 2));
+    console.log("✅ User data loaded successfully into users_key_value_discord.json");
+  } catch (error) {
+    console.error("❌ Failed to fetch users from database:", error);
+  }
+};
+
+
+fetchUsersFromDB();
+
+
 
 export const loadData = async (): Promise<UserData> => {
   try {

@@ -178,7 +178,6 @@ const startBot = () => {
                     const branchName = `aether-bot-${formattedDate}-${hour12}${period}-${minutes}-${seconds}`;
                     try {
                         // Check if branch exists before creating
-                        (0, child_process_1.execSync)(`git rev-parse --verify ${branchName}`, { stdio: "ignore" });
                         (0, child_process_1.execSync)(`git checkout ${branchName}`);
                     }
                     catch (_a) {

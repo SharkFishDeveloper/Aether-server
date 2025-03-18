@@ -19,6 +19,7 @@ const cors_1 = __importDefault(require("cors"));
 const bot_1 = require("./bot");
 const Hello_1 = require("./util/Hello");
 const child_process_1 = require("child_process");
+const pg_1 = require("pg");
 const app = (0, express_1.default)();
 const PORT = 3000;
 const FILE_PATH = "users_key_value_discord.json";
@@ -45,6 +46,27 @@ app.use((0, cors_1.default)({ origin: "https://aether-ai-two.vercel.app", creden
     }
     console.log(`✅ Git user email set successfully: ${stdout}`);
 });
+const pool = new pg_1.Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: { rejectUnauthorized: false },
+});
+const fetchUsersFromDB = () => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const { rows } = yield pool.query(`SELECT "discordId", "name" FROM "User" WHERE "discordId" IS NOT NULL`);
+        const userMap = {};
+        rows.forEach((user) => {
+            if (user.discordId && user.name) {
+                userMap[user.discordId] = user.name;
+            }
+        });
+        yield promises_1.default.writeFile(FILE_PATH, JSON.stringify(userMap, null, 2));
+        console.log("✅ User data loaded successfully into users_key_value_discord.json");
+    }
+    catch (error) {
+        console.error("❌ Failed to fetch users from database:", error);
+    }
+});
+fetchUsersFromDB();
 const loadData = () => __awaiter(void 0, void 0, void 0, function* () {
     try {
         yield promises_1.default.access(FILE_PATH).catch(() => promises_1.default.writeFile(FILE_PATH, "{}")); // Create file if missing

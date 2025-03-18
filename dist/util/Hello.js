@@ -13,9 +13,10 @@ exports.DiscordChatRulesSyntax = `
     Rule 2) Mention path : Write the path name as <folder/file.txt>
     Rule 3) Mention issue: Write the issue
 
-    **ℹ️ Important:**  
-    You only need to follow these steps **once** to get started. After setup, you can communicate naturally with Aether AI.  
-    Do not try to deliberately hallucinate Aether.
+    **ℹ️ Important  :**  
+    1️⃣You only need to follow these steps **once** to get started. After setup, you can communicate naturally with Aether AI.  
+    2️⃣ Avoid Misleading Inputs: Do not attempt to hallucinate or manipulate Aether AI into generating false or misleading responses.
+    3️⃣ Concise Communication: Aether AI processes single instructions effectively. Avoid sending multiple, conflicting commands in one message.
 
     Following these guidelines will help us assist you more effectively. 🚀
 
