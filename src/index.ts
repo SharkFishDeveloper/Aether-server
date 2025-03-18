@@ -17,7 +17,7 @@ app.use(cors(
  { origin:"https://aether-ai-two.vercel.app", credentials: true,}
 ))
 
-exec('git config --global user.name "HlmsDeep"', (error, stdout, stderr) => {
+exec('git config  user.name "HlmsDeep"', (error, stdout, stderr) => {
   if (error) {
     console.error(`❌ Error setting Git user name: ${error.message}`);
     return;
@@ -28,7 +28,7 @@ exec('git config --global user.name "HlmsDeep"', (error, stdout, stderr) => {
   console.log(`✅ Git user name set successfully: ${stdout}`);
 });
 
-exec('git config --global user.email "first12last100@gmail.com"', (error, stdout, stderr) => {
+exec('git config  user.email "first12last100@gmail.com"', (error, stdout, stderr) => {
   if (error) {
     console.error(`❌ Error setting Git user email: ${error.message}`);
     return;
