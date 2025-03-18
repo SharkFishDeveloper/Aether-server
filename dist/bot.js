@@ -65,6 +65,7 @@ const startBot = () => {
             return;
         const extractedData = (0, extractor_1.extractUserMessage)(message.content);
         const { username } = yield (0, getDiscordId_1.getDiscordUser)(message.author.id);
+        console.log("User Data:", username);
         if (extractedData.repo && extractedData.path && extractedData.issue) {
             message.author.send(`✅ Received your request!\n**Repo:** ${extractedData.repo}\n**Path:** ${extractedData.path}\n**Issue:** ${extractedData.issue}`);
             const now = Date.now();
@@ -308,7 +309,6 @@ const getGeminiResponse = (fileContent, issues) => __awaiter(void 0, void 0, voi
             explanation: explanationMatch ? explanationMatch[1].trim() : "No explanation provided",
             error: null
         };
-        console.log(formattedResponse);
         return formattedResponse;
     }
     catch (error) {

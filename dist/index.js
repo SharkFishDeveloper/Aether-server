@@ -20,6 +20,7 @@ const bot_1 = require("./bot");
 const Hello_1 = require("./util/Hello");
 const child_process_1 = require("child_process");
 const pg_1 = require("pg");
+//TODO: Remove this line
 const app = (0, express_1.default)();
 const PORT = 3000;
 const FILE_PATH = "users_key_value_discord.json";
@@ -84,7 +85,10 @@ const fetchUsersFromDB = () => __awaiter(void 0, void 0, void 0, function* () {
 fetchUsersFromDB();
 const loadData = () => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        yield promises_1.default.access(FILE_PATH).catch(() => promises_1.default.writeFile(FILE_PATH, "{}")); // Create file if missing
+        const filedata = promises_1.default.readFile(FILE_PATH, "utf-8");
+        console.log(filedata);
+        yield promises_1.default.access(FILE_PATH).catch(() => promises_1.default.writeFile(FILE_PATH, "{}"));
+        promises_1.default;
         const data = yield promises_1.default.readFile(FILE_PATH, "utf-8");
         return JSON.parse(data);
     }

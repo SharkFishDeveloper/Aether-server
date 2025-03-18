@@ -14,6 +14,7 @@ const __1 = require("..");
 const getDiscordUser = (discordId) => __awaiter(void 0, void 0, void 0, function* () {
     const data = yield (0, __1.loadData)();
     const username = data[discordId];
+    console.log("LAOD DATA->", data);
     if (!username) {
         return { error: "User not found" };
     }

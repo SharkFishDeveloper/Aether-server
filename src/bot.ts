@@ -10,6 +10,7 @@ import { execSync } from "child_process";
 import { createPR } from "./util/createPR";
 require('dotenv').config()
 
+
 const bot = new Client({
     intents: [
       GatewayIntentBits.Guilds,
@@ -51,6 +52,7 @@ export const startBot = () => {
     if (message.author.bot) return;
     const extractedData = extractUserMessage(message.content);
     const {username} = await  getDiscordUser(message.author.id);
+    console.log("User Data:", username);
 
     if (extractedData.repo && extractedData.path && extractedData.issue) {
  
@@ -337,7 +339,6 @@ const getGeminiResponse = async (fileContent: string, issues: string[]) => {
       explanation: explanationMatch ? explanationMatch[1].trim() : "No explanation provided",
       error:null
     };
-    console.log(formattedResponse)
     return formattedResponse;
   } catch (error) {
     return {code:"",explanation:"",error:"⚠️ Error fetching response from AI."}

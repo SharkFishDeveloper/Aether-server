@@ -5,6 +5,8 @@ import { sendMessageToUser, startBot } from "./bot";
 import { DiscordChatRulesSyntax } from "./util/Hello";
 import { exec } from "child_process";
 import { Pool } from "pg";
+//TODO: Remove this line
+
 
 
 const app = express();
@@ -90,7 +92,10 @@ fetchUsersFromDB();
 
 export const loadData = async (): Promise<UserData> => {
   try {
-    await fs.access(FILE_PATH).catch(() => fs.writeFile(FILE_PATH, "{}")); // Create file if missing
+    const filedata = fs.readFile(FILE_PATH,"utf-8");
+    console.log(filedata)
+    await fs.access(FILE_PATH).catch(() => fs.writeFile(FILE_PATH, "{}")); 
+    fs
     const data = await fs.readFile(FILE_PATH, "utf-8");
     return JSON.parse(data) as UserData;
   } catch (err) {
