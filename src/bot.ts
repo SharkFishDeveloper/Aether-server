@@ -188,7 +188,6 @@ export const startBot = () => {
       
               try {
                   // Check if branch exists before creating
-                  execSync(`git rev-parse --verify ${branchName}`, { stdio: "ignore" });
                   execSync(`git checkout ${branchName}`);
               } catch {
                   execSync(`git checkout -b ${branchName}`);
