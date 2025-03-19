@@ -31,7 +31,7 @@ const removeGitLock = async () => {
 };
 
 const setGitConfig = async () => {
-  // await removeGitLock(); // Ensure no lock file exists
+  await removeGitLock(); // Ensure no lock file exists
 
   exec('git config  user.name "HlmsDeep"', (error, stdout, stderr) => {
     if (error) {
