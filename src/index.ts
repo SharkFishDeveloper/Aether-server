@@ -63,7 +63,7 @@ const pool = new Pool({
 });
 
 interface UserData {
-  [key: string]: string; // Mapping Discord ID → Username
+  [key: string]: string ; // Mapping Discord ID → Username
 }
 
 const fetchUsersFromDB = async () => {
