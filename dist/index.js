@@ -29,7 +29,7 @@ app.use(express_1.default.json());
 app.use((0, cors_1.default)({ origin: "https://aether-ai-two.vercel.app", credentials: true, }));
 const removeGitLock = () => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        yield fs_1.default.unlinkSync("/opt/render/.gitconfig.lock");
+        yield fs_1.default.unlinkSync(".git/config.lock"); // Correct lock file path
         console.log("✅ Removed Git lock file (if it existed)");
     }
     catch (err) {

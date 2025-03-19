@@ -21,7 +21,7 @@ app.use(cors(
 
 const removeGitLock = async () => {
   try {
-    await fs.unlinkSync("/opt/render/.gitconfig.lock");
+    await fs.unlinkSync(".git/config.lock"); // Correct lock file path
     console.log("✅ Removed Git lock file (if it existed)");
   } catch (err: any) {
     if (err.code !== "ENOENT") {
