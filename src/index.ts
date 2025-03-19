@@ -3,7 +3,7 @@ import fs from "fs";
 import cors from "cors"
 import { sendMessageToUser, startBot } from "./bot";
 import { DiscordChatRulesSyntax } from "./util/Hello";
-import { exec } from "child_process";
+import { exec, execSync } from "child_process";
 import { Pool } from "pg";
 //TODO: Remove this line
 
@@ -33,27 +33,17 @@ const removeGitLock = async () => {
 const setGitConfig = async () => {
   await removeGitLock(); // Ensure no lock file exists
 
-  exec('git config  user.name "HlmsDeep"', (error, stdout, stderr) => {
-    if (error) {
-      console.error(`❌ Error setting Git user name: ${error.message}`);
-      return;
-    }
-    if (stderr) {
-      console.error(`⚠️ Git config stderr: ${stderr}`);
-    }
-    console.log(`✅ Git user name set successfully: ${stdout}`);
-  });
+  try {
+    execSync('git config user.name "HlmsDeep"', { stdio: "inherit" });
+    execSync('git config  user.email "first12last100@gmail.com"', { stdio: "inherit" });
 
-  exec('git config  user.email "first12last100@gmail.com"', (error, stdout, stderr) => {
-    if (error) {
-      console.error(`❌ Error setting Git user email: ${error.message}`);
-      return;
-    }
-    if (stderr) {
-      console.error(`⚠️ Git config stderr: ${stderr}`);
-    }
-    console.log(`✅ Git user email set successfully: ${stdout}`);
-  });
+    console.log("✅ Git user name & email set successfully!");
+
+    // Verify the config
+    execSync("git config --list", { stdio: "inherit" });
+  } catch (error: any) {
+    console.error(`❌ Error setting Git config: ${error.message}`);
+  }
 };
 setGitConfig();
 

@@ -40,26 +40,16 @@ const removeGitLock = () => __awaiter(void 0, void 0, void 0, function* () {
 });
 const setGitConfig = () => __awaiter(void 0, void 0, void 0, function* () {
     yield removeGitLock(); // Ensure no lock file exists
-    (0, child_process_1.exec)('git config  user.name "HlmsDeep"', (error, stdout, stderr) => {
-        if (error) {
-            console.error(`❌ Error setting Git user name: ${error.message}`);
-            return;
-        }
-        if (stderr) {
-            console.error(`⚠️ Git config stderr: ${stderr}`);
-        }
-        console.log(`✅ Git user name set successfully: ${stdout}`);
-    });
-    (0, child_process_1.exec)('git config  user.email "first12last100@gmail.com"', (error, stdout, stderr) => {
-        if (error) {
-            console.error(`❌ Error setting Git user email: ${error.message}`);
-            return;
-        }
-        if (stderr) {
-            console.error(`⚠️ Git config stderr: ${stderr}`);
-        }
-        console.log(`✅ Git user email set successfully: ${stdout}`);
-    });
+    try {
+        (0, child_process_1.execSync)('git config user.name "HlmsDeep"', { stdio: "inherit" });
+        (0, child_process_1.execSync)('git config  user.email "first12last100@gmail.com"', { stdio: "inherit" });
+        console.log("✅ Git user name & email set successfully!");
+        // Verify the config
+        (0, child_process_1.execSync)("git config --list", { stdio: "inherit" });
+    }
+    catch (error) {
+        console.error(`❌ Error setting Git config: ${error.message}`);
+    }
 });
 setGitConfig();
 const pool = new pg_1.Pool({
