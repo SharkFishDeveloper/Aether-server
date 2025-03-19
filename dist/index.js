@@ -40,7 +40,7 @@ const removeGitLock = () => __awaiter(void 0, void 0, void 0, function* () {
 });
 const setGitConfig = () => __awaiter(void 0, void 0, void 0, function* () {
     yield removeGitLock(); // Ensure no lock file exists
-    (0, child_process_1.exec)('git config --global user.name "HlmsDeep"', (error, stdout, stderr) => {
+    (0, child_process_1.exec)('git config  user.name "HlmsDeep"', (error, stdout, stderr) => {
         if (error) {
             console.error(`❌ Error setting Git user name: ${error.message}`);
             return;
@@ -50,7 +50,7 @@ const setGitConfig = () => __awaiter(void 0, void 0, void 0, function* () {
         }
         console.log(`✅ Git user name set successfully: ${stdout}`);
     });
-    (0, child_process_1.exec)('git config --global user.email "first12last100@gmail.com"', (error, stdout, stderr) => {
+    (0, child_process_1.exec)('git config  user.email "first12last100@gmail.com"', (error, stdout, stderr) => {
         if (error) {
             console.error(`❌ Error setting Git user email: ${error.message}`);
             return;
