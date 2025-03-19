@@ -39,7 +39,7 @@ const removeGitLock = () => __awaiter(void 0, void 0, void 0, function* () {
     }
 });
 const setGitConfig = () => __awaiter(void 0, void 0, void 0, function* () {
-    yield removeGitLock(); // Ensure no lock file exists
+    // await removeGitLock(); // Ensure no lock file exists
     (0, child_process_1.exec)('git config  user.name "HlmsDeep"', (error, stdout, stderr) => {
         if (error) {
             console.error(`❌ Error setting Git user name: ${error.message}`);
