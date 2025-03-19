@@ -41,8 +41,8 @@ const removeGitLock = () => __awaiter(void 0, void 0, void 0, function* () {
 const setGitConfig = () => __awaiter(void 0, void 0, void 0, function* () {
     yield removeGitLock(); // Ensure no lock file exists
     try {
-        (0, child_process_1.execSync)('git config user.name "HlmsDeep"', { stdio: "inherit" });
-        (0, child_process_1.execSync)('git config  user.email "first12last100@gmail.com"', { stdio: "inherit" });
+        (0, child_process_1.execSync)('git config -- global user.name "HlmsDeep"', { stdio: "inherit" });
+        (0, child_process_1.execSync)('git config  --global user.email "first12last100@gmail.com"', { stdio: "inherit" });
         console.log("✅ Git user name & email set successfully!");
         // Verify the config
         (0, child_process_1.execSync)("git config --list", { stdio: "inherit" });
