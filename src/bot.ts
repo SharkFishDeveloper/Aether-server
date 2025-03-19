@@ -5,9 +5,10 @@ import { getDiscordUser } from "./util/getDiscordId";
 import fs from "fs";
 import path from "path";
 import axios from "axios"
-import { diffLines } from "diff";
 import { execSync } from "child_process";
 import { createPR } from "./util/createPR";
+import { getUserRepos } from "./util/getUserRepos";
+import { generateTree } from "./util/gitDirectory";
 require('dotenv').config()
 
 
@@ -52,9 +53,39 @@ export const startBot = () => {
     if (message.author.bot) return;
     const extractedData = extractUserMessage(message.content);
     const {username} = await  getDiscordUser(message.author.id);
-    console.log("User Data:", username);
 
-    if (extractedData.repo && extractedData.path && extractedData.issue) {
+    if(!username)return message.author.send("Please sign in correctly, or wait for some time")
+
+      if (message.content.trim() === "repos?") {
+        try {
+            const repos = await getUserRepos(username);
+            await message.author.send(repos.formattedRepos || "No repositories found.");
+            return; // ✅ Return to prevent further execution
+        } catch (error) {
+            console.error("Error fetching repos:", error);
+            return message.author.send("❌ Error fetching repositories. Try again later.");
+        }
+    }
+    else if(message.content.trim() === "echo"){
+      if(USER_REQUESTS[username]){
+        const userdetail = USER_REQUESTS[username]
+        const {repo,path} = userdetail;
+        return message.author.send(`Username : ${username}\nRepository : ${repo}\nPath:${path}`)
+      }else{
+        return message.author.send("Oops, there is no activity...")
+      }
+    }
+
+    else if(message.content.trim() == 'list'){
+      if(USER_REQUESTS[username].repo !==""){
+        const listDir = await generateTree(path.join(process.cwd(),'/clonedRepos',username,USER_REQUESTS[username].repo));
+        return message.author.send(listDir ?? "Cannot do it ...") 
+      }else{
+        return message.author.send("No repository is selected...")
+      }
+    }
+
+    else if (extractedData.repo && extractedData.path && extractedData.issue) {
  
         message.author.send(`✅ Received your request!\n**Repo:** ${extractedData.repo}\n**Path:** ${extractedData.path}\n**Issue:** ${extractedData.issue}`);
         
@@ -99,19 +130,10 @@ export const startBot = () => {
         }
         if (code) {
           try {
-            const diff = diffLines(fileContent || "", code);
-            const preview = diff
-              .map((part) => {
-                if (part.added) return `+ ${part.value.trim()}`;
-                if (part.removed) return `- ${part.value.trim()}`;
-                return null;
-              })
-              .filter(Boolean) // Removes null values
-              .join("\n");
-        
+           
             // Truncate if preview is too long
             const maxLength = 800; // Reserve some space for extra text
-            const truncatedPreview =  preview.length > maxLength ? preview.slice(0, maxLength) + "\n..." : preview;
+            const truncatedPreview =  code.length > maxLength ? code.slice(0, maxLength) + "\n..." : code;
             fs.writeFileSync(filePath, code);
             const cleanedExplanation = explanation.replace(/\n\s*\n/g, '\n').trim();
             await message.author.send(`**Explanation:**\n${cleanedExplanation.slice(0, 1400)}`);
@@ -242,19 +264,9 @@ export const startBot = () => {
           }
           if (code) {
             try {
-              const diff = diffLines(fileContent || "", code);
-              const preview = diff
-                .map((part) => {
-                  if (part.added) return `+ ${part.value.trim()}`;
-                  if (part.removed) return `- ${part.value.trim()}`;
-                  return null;
-                })
-                .filter(Boolean) // Removes null values
-                .join("\n");
-          
               // Truncate if preview is too long
               const maxLength = 800; // Reserve some space for extra text
-              const truncatedPreview =  preview.length > maxLength ? preview.slice(0, maxLength) + "\n..." : preview;
+              const truncatedPreview =  code.length > maxLength ? code.slice(0, maxLength) + "\n..." : code;
               fs.writeFileSync(filePath, code);
               const cleanedExplanation = explanation.replace(/\n\s*\n/g, '\n').trim();
               await message.author.send(`**Explanation:**\n${cleanedExplanation.slice(0, 1400)}`);
@@ -339,6 +351,7 @@ const getGeminiResponse = async (fileContent: string, issues: string[]) => {
       explanation: explanationMatch ? explanationMatch[1].trim() : "No explanation provided",
       error:null
     };
+    console.log(formattedResponse)
     return formattedResponse;
   } catch (error) {
     return {code:"",explanation:"",error:"⚠️ Error fetching response from AI."}

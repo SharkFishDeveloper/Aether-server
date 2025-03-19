@@ -83,19 +83,29 @@ const fetchUsersFromDB = () => __awaiter(void 0, void 0, void 0, function* () {
     }
 });
 fetchUsersFromDB();
-const loadData = () => {
+const loadData = () => __awaiter(void 0, void 0, void 0, function* () {
     try {
         if (!fs_1.default.existsSync(FILE_PATH)) {
             fs_1.default.writeFileSync(FILE_PATH, "{}"); // Create file if missing
         }
         const data = fs_1.default.readFileSync(FILE_PATH, "utf-8");
+        if (!data.trim() || data === "{}") {
+            console.log("File is empty. Fetching from database...");
+            const res = yield pool.query(`SELECT "discordId", "name" FROM "User" WHERE "discordId" IS NOT NULL`);
+            const dbData = res.rows.reduce((acc, row) => {
+                acc[row.discordId] = row.name;
+                return acc;
+            }, {});
+            fs_1.default.writeFileSync(FILE_PATH, JSON.stringify(dbData, null, 2));
+            return dbData;
+        }
         return JSON.parse(data);
     }
     catch (err) {
         console.error("Error loading data:", err);
         return {}; // Return empty object on error
     }
-};
+});
 exports.loadData = loadData;
 const saveData = (data) => {
     try {

@@ -20,9 +20,10 @@ const getDiscordId_1 = require("./util/getDiscordId");
 const fs_1 = __importDefault(require("fs"));
 const path_1 = __importDefault(require("path"));
 const axios_1 = __importDefault(require("axios"));
-const diff_1 = require("diff");
 const child_process_1 = require("child_process");
 const createPR_1 = require("./util/createPR");
+const getUserRepos_1 = require("./util/getUserRepos");
+const gitDirectory_1 = require("./util/gitDirectory");
 require('dotenv').config();
 const bot = new discord_js_1.Client({
     intents: [
@@ -65,8 +66,39 @@ const startBot = () => {
             return;
         const extractedData = (0, extractor_1.extractUserMessage)(message.content);
         const { username } = yield (0, getDiscordId_1.getDiscordUser)(message.author.id);
-        console.log("User Data:", username);
-        if (extractedData.repo && extractedData.path && extractedData.issue) {
+        if (!username)
+            return message.author.send("Please sign in correctly, or wait for some time");
+        if (message.content.trim() === "repos?") {
+            try {
+                const repos = yield (0, getUserRepos_1.getUserRepos)(username);
+                yield message.author.send(repos.formattedRepos || "No repositories found.");
+                return; // ✅ Return to prevent further execution
+            }
+            catch (error) {
+                console.error("Error fetching repos:", error);
+                return message.author.send("❌ Error fetching repositories. Try again later.");
+            }
+        }
+        else if (message.content.trim() === "echo") {
+            if (USER_REQUESTS[username]) {
+                const userdetail = USER_REQUESTS[username];
+                const { repo, path } = userdetail;
+                return message.author.send(`Username : ${username}\nRepository : ${repo}\nPath:${path}`);
+            }
+            else {
+                return message.author.send("Oops, there is no activity...");
+            }
+        }
+        else if (message.content.trim() == 'list') {
+            if (USER_REQUESTS[username].repo !== "") {
+                const listDir = yield (0, gitDirectory_1.generateTree)(path_1.default.join(process.cwd(), '/clonedRepos', username, USER_REQUESTS[username].repo));
+                return message.author.send(listDir !== null && listDir !== void 0 ? listDir : "Cannot do it ...");
+            }
+            else {
+                return message.author.send("No repository is selected...");
+            }
+        }
+        else if (extractedData.repo && extractedData.path && extractedData.issue) {
             message.author.send(`✅ Received your request!\n**Repo:** ${extractedData.repo}\n**Path:** ${extractedData.path}\n**Issue:** ${extractedData.issue}`);
             const now = Date.now();
             if (!username || username === "")
@@ -102,20 +134,9 @@ const startBot = () => {
             }
             if (code) {
                 try {
-                    const diff = (0, diff_1.diffLines)(fileContent || "", code);
-                    const preview = diff
-                        .map((part) => {
-                        if (part.added)
-                            return `+ ${part.value.trim()}`;
-                        if (part.removed)
-                            return `- ${part.value.trim()}`;
-                        return null;
-                    })
-                        .filter(Boolean) // Removes null values
-                        .join("\n");
                     // Truncate if preview is too long
                     const maxLength = 800; // Reserve some space for extra text
-                    const truncatedPreview = preview.length > maxLength ? preview.slice(0, maxLength) + "\n..." : preview;
+                    const truncatedPreview = code.length > maxLength ? code.slice(0, maxLength) + "\n..." : code;
                     fs_1.default.writeFileSync(filePath, code);
                     const cleanedExplanation = explanation.replace(/\n\s*\n/g, '\n').trim();
                     yield message.author.send(`**Explanation:**\n${cleanedExplanation.slice(0, 1400)}`);
@@ -228,20 +249,9 @@ const startBot = () => {
                 }
                 if (code) {
                     try {
-                        const diff = (0, diff_1.diffLines)(fileContent || "", code);
-                        const preview = diff
-                            .map((part) => {
-                            if (part.added)
-                                return `+ ${part.value.trim()}`;
-                            if (part.removed)
-                                return `- ${part.value.trim()}`;
-                            return null;
-                        })
-                            .filter(Boolean) // Removes null values
-                            .join("\n");
                         // Truncate if preview is too long
                         const maxLength = 800; // Reserve some space for extra text
-                        const truncatedPreview = preview.length > maxLength ? preview.slice(0, maxLength) + "\n..." : preview;
+                        const truncatedPreview = code.length > maxLength ? code.slice(0, maxLength) + "\n..." : code;
                         fs_1.default.writeFileSync(filePath, code);
                         const cleanedExplanation = explanation.replace(/\n\s*\n/g, '\n').trim();
                         yield message.author.send(`**Explanation:**\n${cleanedExplanation.slice(0, 1400)}`);
@@ -309,6 +319,7 @@ const getGeminiResponse = (fileContent, issues) => __awaiter(void 0, void 0, voi
             explanation: explanationMatch ? explanationMatch[1].trim() : "No explanation provided",
             error: null
         };
+        console.log(formattedResponse);
         return formattedResponse;
     }
     catch (error) {

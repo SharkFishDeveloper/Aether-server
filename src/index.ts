@@ -90,13 +90,24 @@ fetchUsersFromDB();
 
 
 
-export const loadData = (): UserData => {
+export const loadData = async (): Promise<UserData> => {
   try {
     if (!fs.existsSync(FILE_PATH)) {
       fs.writeFileSync(FILE_PATH, "{}"); // Create file if missing
     }
-
     const data = fs.readFileSync(FILE_PATH, "utf-8");
+    if (!data.trim() || data === "{}") {
+      console.log("File is empty. Fetching from database...");
+      const res = await pool.query(
+        `SELECT "discordId", "name" FROM "User" WHERE "discordId" IS NOT NULL`
+      );
+      const dbData = res.rows.reduce((acc, row) => {
+        acc[row.discordId] = row.name;
+        return acc;
+      }, {} as UserData);
+      fs.writeFileSync(FILE_PATH, JSON.stringify(dbData, null, 2));
+      return dbData;
+    }
     return JSON.parse(data) as UserData;
   } catch (err) {
     console.error("Error loading data:", err);
