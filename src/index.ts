@@ -34,8 +34,8 @@ const setGitConfig = async () => {
   await removeGitLock(); // Ensure no lock file exists
 
   try {
-    execSync('git config user.name "HlmsDeep"', { stdio: "inherit" });
-    execSync('git config  user.email "first12last100@gmail.com"', { stdio: "inherit" });
+    execSync('git config  --global user.name "HlmsDeep"', { stdio: "inherit" });
+    execSync('git config  --global user.email "first12last100@gmail.com"', { stdio: "inherit" });
 
     console.log("✅ Git user name & email set successfully!");
 
