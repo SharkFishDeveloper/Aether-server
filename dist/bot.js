@@ -132,20 +132,22 @@ const startBot = () => {
             if (error) {
                 return message.author.send(error);
             }
-            if (code) {
-                try {
-                    // Truncate if preview is too long
-                    const maxLength = 800; // Reserve some space for extra text
-                    const truncatedPreview = code.length > maxLength ? code.slice(0, maxLength) + "\n..." : code;
-                    fs_1.default.writeFileSync(filePath, code);
-                    const cleanedExplanation = explanation.replace(/\n\s*\n/g, '\n').trim();
-                    yield message.author.send(`**Explanation:**\n${cleanedExplanation.slice(0, 1400)}`);
-                    yield new Promise(resolve => setTimeout(resolve, 1000));
-                    yield message.author.send(`**Code:** \`\`\`\n${truncatedPreview}\n\`\`\``);
-                }
-                catch (error) {
-                    message.author.send("❌ Error applying changes.");
-                }
+            if (code && code !== "No code provided" && code.length !== 24) {
+    try {
+        // Truncate if preview is too long
+        const maxLength = 800; // Reserve some space for extra text
+        const truncatedPreview = code.length > maxLength ? code.slice(0, maxLength) + "\n..." : code;
+        
+        // Write file only if conditions are met
+        fs_1.default.writeFileSync(filePath, code);
+        
+        const cleanedExplanation = explanation.replace(/\n\s*\n/g, '\n').trim();
+        yield message.author.send(`**Explanation:**\n${cleanedExplanation.slice(0, 1400)}`);
+        yield new Promise(resolve => setTimeout(resolve, 1000));
+        yield message.author.send(`**Code:** \`\`\`\n${truncatedPreview}\n\`\`\``);
+    } catch (error) {
+        message.author.send("❌ Error applying changes.");
+    }
             }
             //* THIS ELSE BLOCK IS REQUIRED WHEN THERE IS NO CODE BLOCK AS IN CASE OF A QUERY
             else {
@@ -247,21 +249,23 @@ const startBot = () => {
                 if (error) {
                     return message.author.send(error);
                 }
-                if (code) {
-                    try {
-                        // Truncate if preview is too long
-                        const maxLength = 800; // Reserve some space for extra text
-                        const truncatedPreview = code.length > maxLength ? code.slice(0, maxLength) + "\n..." : code;
-                        fs_1.default.writeFileSync(filePath, code);
-                        const cleanedExplanation = explanation.replace(/\n\s*\n/g, '\n').trim();
-                        yield message.author.send(`**Explanation:**\n${cleanedExplanation.slice(0, 1400)}`);
-                        yield new Promise(resolve => setTimeout(resolve, 1000));
-                        yield message.author.send(`**Code:** \`\`\`\n${truncatedPreview}\n\`\`\``);
-                    }
-                    catch (error) {
-                        message.author.send("❌ Error applying changes.");
-                    }
-                }
+                if (code && code !== "No code provided" && code.length !== 24) {
+    try {
+        // Truncate if preview is too long
+        const maxLength = 800; // Reserve some space for extra text
+        const truncatedPreview = code.length > maxLength ? code.slice(0, maxLength) + "\n..." : code;
+        
+        // Write file only if conditions are met
+        fs_1.default.writeFileSync(filePath, code);
+        
+        const cleanedExplanation = explanation.replace(/\n\s*\n/g, '\n').trim();
+        yield message.author.send(`**Explanation:**\n${cleanedExplanation.slice(0, 1400)}`);
+        yield new Promise(resolve => setTimeout(resolve, 1000));
+        yield message.author.send(`**Code:** \`\`\`\n${truncatedPreview}\n\`\`\``);
+    } catch (error) {
+        message.author.send("❌ Error applying changes.");
+    }
+}
                 //* THIS ELSE BLOCK IS REQUIRED WHEN THERE IS NO CODE BLOCK AS IN CASE OF A QUERY
                 else {
                     return message.author.send(explanation.slice(0, 1800));
